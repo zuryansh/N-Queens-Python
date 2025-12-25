@@ -1,3 +1,5 @@
+import random
+
 class Colors:
     RED = '\033[91m'
     GREEN = '\033[92m'
@@ -9,11 +11,11 @@ class Board:
 
     def __init__(self , size):
         self.size = size
-        self.board = create_empty_board(size)
-        self.clean_cells = []
-        self.queen_positions = []
-        self.cells = self.get_all_cells()
+        self.board = create_empty_board(size,self)
+        self.queen_cells: list[Cell] = [] #
+        self.cells: list[Cell] = self.get_all_cells()
         self.clean_cells = self.cells
+        print(self.clean_cells.__len__())
         
     def get_all_cells(self):
         cells = []
@@ -29,44 +31,56 @@ class Board:
             for j in range(0,self.size):
                 cell = self.board[i][j]
                 # out+= f"({cell.x},{cell.y})"
-
-                if(cell.dirty):
-                    out += Colors.RED + ' ☐ ' + Colors.ENDC
-                elif(cell.has_queen):
+                if(cell.has_queen):
                     out += " \u2655 "
                 else:
-                    out += Colors.GREEN + ' ☐ ' + Colors.ENDC
+                    if(cell.dirty):
+                        out += Colors.RED + ' ☐ ' + Colors.ENDC
+                    
+                    else:
+                        out += Colors.GREEN + ' ☐ ' + Colors.ENDC
 
             out += "\n"
     
         return out
     
+    def update(self):
+        self.clean_cells = self.find_clean_cells()
+
     def find_clean_cells(self):
         dirty_cells = []
-        for pos in self.queen_positions:
-            for cell in self.board[pos[0]][pos[1]].get_box_pattern_cells(self):
+        for queen_cell in self.queen_cells:
+            for cell in self.board[queen_cell.x][queen_cell.y].get_box_pattern_cells(self):
                 dirty_cells.append(cell)
                 cell.dirty = True
-            for cell in self.board[pos[0]][pos[1]].get_X_pattern_cells(self):
+            for cell in self.board[queen_cell.x][queen_cell.y].get_X_pattern_cells(self):
                 dirty_cells.append(cell)
                 cell.dirty = True
-            for cell in self.board[pos[0]][pos[1]].get_plus_pattern_cells(self):
+            for cell in self.board[queen_cell.x][queen_cell.y].get_plus_pattern_cells(self):
                 dirty_cells.append(cell)
                 cell.dirty = True
-            dirty_cells.append(pos)
-            # self.board[pos[0]][pos[1]].dirty = True
-            self.board[pos[0]][pos[1]].has_queen = True
+
+            dirty_cells.append(queen_cell)
+            # self.board[queen_cell[1]][queen_cell[0]].has_queen = True
+            
             
 
         return list(set(self.clean_cells) - set(dirty_cells))
 
 
 class Cell:
-    def __init__(self, x,y):
+    def __init__(self, x,y, board: Board):
         self.x = x
         self.y = y
         self.dirty = False
         self.has_queen = False
+        self.parentBoard: Board = board
+
+    def place_queen_on_cell(self):
+        self.has_queen = True
+        self.dirty = True
+        self.parentBoard.queen_cells.append(self)
+        self.parentBoard.update()
 
     def __str__(self):
         return f"({self.x},{self.y})"
@@ -128,24 +142,41 @@ class Cell:
         return cells
     
 
+def place_queen(board:Board):
+    if(board.clean_cells.__len__()==0):
+        global try_again
+        return
+    
+    cell  = random.choice(board.clean_cells)
+    cell.place_queen_on_cell()
+    
 
 
-def create_empty_board(size:int):
-    board = [[Cell(i,j) for i in range(size)] for j in range(size)]
+def create_empty_board(size:int, out: Board):
+    board = [[Cell(i,j, out) for i in range(size)] for j in range(size)]
     
     return board
 
 def main():
-    board = Board(8)
+    n  = int(input("ENTER N: "))
+
+    board = Board(n)
     print(board)
+    # board.queen_positions.append((1,0))
+    for i in range(0,n):
 
-    x = int(input("Enter Queen X PoS: "))
-    y = int(input("Enter Queen Y PoS: "))
+        # x = int(input("Enter Queen X PoS: "))
+        # y = int(input("Enter Queen Y PoS: "))
 
-    board.queen_positions.append((x,y))
-    board.find_clean_cells()
+        # board.queen_cells.append((x,y))
+        # board.find_clean_cells()
+        place_queen(board)
 
-    print(board)
+        print(board)
+        input("Press Enter for next step")
 
+    if(board.queen_cells.__len__()<n):
+        print(Colors.RED + "FAILED TRY AGAIN" + Colors.ENDC)
+    
 
 main()
