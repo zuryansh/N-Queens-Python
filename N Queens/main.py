@@ -15,7 +15,6 @@ class Board:
         self.queen_cells: list[Cell] = [] #
         self.cells: list[Cell] = self.get_all_cells()
         self.clean_cells = self.cells
-        print(self.clean_cells.__len__())
         
     def get_all_cells(self):
         cells = []
@@ -27,16 +26,17 @@ class Board:
 
     def __str__(self):
         out = ""
+        global show_steps
         for i in range(0,self.size):
             for j in range(0,self.size):
                 cell = self.board[i][j]
-                # out+= f"({cell.x},{cell.y})"
+                    # out+= f"({cell.x},{cell.y})"
                 if(cell.has_queen):
                     out += " \u2655 "
                 else:
                     if(cell.dirty):
                         out += Colors.RED + ' ☐ ' + Colors.ENDC
-                    
+                        
                     else:
                         out += Colors.GREEN + ' ☐ ' + Colors.ENDC
 
@@ -144,8 +144,10 @@ class Cell:
 
 def place_queen(board:Board):
     if(board.clean_cells.__len__()==0):
-        global try_again
+        global failed
+        failed = True
         return
+
     
     cell  = random.choice(board.clean_cells)
     cell.place_queen_on_cell()
@@ -157,26 +159,46 @@ def create_empty_board(size:int, out: Board):
     
     return board
 
-def main():
-    n  = int(input("ENTER N: "))
+def main(n:int):
+    global failed 
+    failed = False
 
     board = Board(n)
-    print(board)
-    # board.queen_positions.append((1,0))
-    for i in range(0,n):
-
-        # x = int(input("Enter Queen X PoS: "))
-        # y = int(input("Enter Queen Y PoS: "))
-
-        # board.queen_cells.append((x,y))
-        # board.find_clean_cells()
-        place_queen(board)
-
+    if(show_steps):
         print(board)
-        input("Press Enter for next step")
+
+    for _ in range(0,n):
+
+        place_queen(board)
+        if(failed):
+            break
+        
+        if(show_steps):
+            print(board)
+            input("Press Enter for next step")
 
     if(board.queen_cells.__len__()<n):
         print(Colors.RED + "FAILED TRY AGAIN" + Colors.ENDC)
+
+    elif(board.queen_cells.__len__() == n):
+        print(Colors.GREEN +"SUCESS" + Colors.ENDC)
+        global trying
+        trying  = False
+        global ans
+        ans = board
+
     
 
-main()
+trying = True
+ans = None
+show_steps : bool = False
+n  = int(input("ENTER N: "))
+no_of_tries = 0
+
+while trying:
+    no_of_tries+=1
+    main(n)
+
+print(Colors.GREEN+"-----------------------ONE OF THE VALID ANS IS---------------------" + Colors.ENDC)
+print(ans)
+print(f"It took {no_of_tries} Tries!")
